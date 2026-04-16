@@ -36,70 +36,116 @@ class PredictTab(QWidget):
         layout = QVBoxLayout(self)
         layout.setSpacing(15)
 
-        # 输入区域
+        # 输入区域（保持不变）
         input_layout = QHBoxLayout()
         self.name_input = QLineEdit()
         self.name_input.setPlaceholderText("请输入英文名字（如：John Smith）...")
-        self.name_input.setMinimumHeight(35)
+        self.name_input.setMinimumHeight(40)  # 稍微加高输入框
+        self.name_input.setStyleSheet("""
+            QLineEdit {
+                font-size: 14px;
+                padding: 5px 10px;
+                border: 2px solid #e0e0e0;
+                border-radius: 6px;
+            }
+            QLineEdit:focus { border-color: #2196F3; }
+        """)
 
-        self.predict_btn = QPushButton("开始预测")
-        self.predict_btn.setMinimumHeight(35)
+        self.predict_btn = QPushButton("🚀 开始预测")  # 加图标
+        self.predict_btn.setMinimumHeight(40)
         self.predict_btn.setStyleSheet("""
             QPushButton {
                 background-color: #2196F3;
                 color: white;
-                border-radius: 4px;
+                border-radius: 6px;
+                font-size: 14px;
                 font-weight: bold;
+                padding: 8px 20px;
             }
             QPushButton:hover { background-color: #1976D2; }
             QPushButton:pressed { background-color: #0D47A1; }
             QPushButton:disabled { background-color: #BDBDBD; }
         """)
 
-        input_layout.addWidget(self.name_input, stretch=3)
+        input_layout.addWidget(self.name_input, stretch=4)
         input_layout.addWidget(self.predict_btn, stretch=1)
         layout.addLayout(input_layout)
 
-        # 缓存命中提示（用况4）
+        # 缓存命中提示（放大字体，加背景色）
         self.cache_label = QLabel("")
-        self.cache_label.setStyleSheet("color: #4CAF50; font-weight: bold;")
+        self.cache_label.setStyleSheet("""
+            QLabel {
+                color: #2E7D32;
+                font-weight: bold;
+                font-size: 13px;
+                background-color: #E8F5E9;
+                padding: 8px 12px;
+                border-radius: 4px;
+                border-left: 4px solid #4CAF50;
+            }
+        """)
+        self.cache_label.setWordWrap(True)  # 允许换行
         layout.addWidget(self.cache_label)
 
-        # 结果展示区域
-        result_label = QLabel("预测结果 (Top 3):")
-        result_label.setStyleSheet("font-weight: bold; font-size: 14px;")
-        layout.addWidget(result_label)
+        # 结果区域标题
+        result_header = QLabel("🎯 预测结果 (Top 3):")
+        result_header.setStyleSheet("font-weight: bold; font-size: 14px; color: #333;")
+        layout.addWidget(result_header)
 
+        # 结果列表（加高度）
         self.result_list = QListWidget()
-        self.result_list.setMinimumHeight(200)
-        layout.addWidget(self.result_list)
-
-        # 纠正区域（初始隐藏，预测后显示）
-        self.correction_widget = QWidget()
-        corr_layout = QHBoxLayout(self.correction_widget)
-        corr_layout.setContentsMargins(0, 0, 0, 0)
-
-        self.correct_btn = QPushButton("纠正结果（选择正确国籍）")
-        self.correct_btn.setStyleSheet("""
-            QPushButton {
-                background-color: #FF9800;
-                color: white;
-                border-radius: 4px;
+        self.result_list.setMinimumHeight(220)  # 加高以填充空间
+        self.result_list.setSpacing(8)  # 增加行间距
+        self.result_list.setStyleSheet("""
+            QListWidget {
+                border: 1px solid #e0e0e0;
+                border-radius: 6px;
+                padding: 10px;
+                background-color: #fafafa;
             }
-            QPushButton:hover { background-color: #F57C00; }
+            QListWidget::item {
+                padding: 12px;
+                border-radius: 4px;
+                margin-bottom: 5px;
+            }
+            QListWidget::item:selected {
+                background-color: #e3f2fd;
+            }
         """)
-        self.correct_btn.setEnabled(False)  # 初始禁用
+        layout.addWidget(self.result_list, stretch=1)  # 让结果列表占据剩余空间
 
-        corr_layout.addWidget(self.correct_btn)
-        corr_layout.addStretch()
-        layout.addWidget(self.correction_widget)
+        # === 关键修改：纠正按钮区域（从底部移到结果下方，放大）===
+        correction_area = QWidget()
+        corr_layout = QVBoxLayout(correction_area)  # 改为垂直布局，更醒目
+        corr_layout.setContentsMargins(0, 10, 0, 0)
+        corr_layout.setSpacing(10)
 
-        # 状态栏
-        self.status_label = QLabel("就绪")
-        self.status_label.setStyleSheet("color: #666;")
+        # 分隔线（视觉分割）
+        line = QLabel()
+        line.setStyleSheet("background-color: #e0e0e0; max-height: 2px;")
+        line.setMinimumHeight(2)
+        corr_layout.addWidget(line)
+
+        # 纠正按钮（大按钮，居中）
+        self.correct_btn = QPushButton("✏️ 纠正预测结果（选择正确国籍）")
+        self.correct_btn.setMinimumHeight(50)  # 加高
+        self.correct_btn.setEnabled(False)
+        corr_layout.addWidget(self.correct_btn, alignment=Qt.AlignmentFlag.AlignCenter)
+
+        # 提示文字（小字说明）
+        hint = QLabel("💡 如果预测不准确，点击上方按钮纠正，系统将学习您的反馈")
+        hint.setStyleSheet("color: #666; font-size: 11px;")
+        hint.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        corr_layout.addWidget(hint)
+
+        layout.addWidget(correction_area)
+
+        # 状态栏（底部）
+        self.status_label = QLabel("就绪 - 请输入名字开始预测")
+        self.status_label.setStyleSheet(
+            "color: #666; font-size: 12px; padding-top: 10px;"
+        )
         layout.addWidget(self.status_label)
-
-        layout.addStretch()
 
     def _connect_signals(self):
         self.predict_btn.clicked.connect(self._on_predict)
